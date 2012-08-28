@@ -1,0 +1,260 @@
+<?php
+
+/**
+ * Install file for Brafton module.
+ */
+
+function brafton_install() {  
+
+	$t = get_t();
+
+	$b_news = array(
+		'type'        => 'b_news',
+		'name'        => $t('News Article'),    
+		'base'        => 'node_content',
+		'description' => $t('The latest industry news.'),
+		'custom'      => TRUE,
+	);
+  
+	$content_type = node_type_set_defaults($b_news);
+  
+	node_add_body_field($content_type);
+
+	node_type_save($content_type);
+
+	$body_instance = field_info_instance('node', 'body', 'b_news');
+
+	if (!field_info_field('field_brafton_term')) {
+		foreach (_b_news_installed_fields() as $field) {
+			field_create_field($field);
+		}
+
+		foreach (_b_news_installed_instances() as $instance) {
+			$instance['entity_type'] = 'node';
+			$instance['bundle'] = $b_news['type'];
+			field_create_instance($instance);
+		}
+	}
+  
+	if(!file_exists(file_default_scheme().'://brafton_images/')) {
+		drupal_mkdir(file_default_scheme().'://brafton_images/');
+	}
+}
+
+
+/**
+function brafton_uninstall() {
+	$sql = 'SELECT nid FROM {node} n WHERE n.type = :type';
+	$result = db_query($sql, array(':type' => 'b_news'));
+	$nids = array();
+	foreach ($result as $row) {
+		$nids[] = $row->nid;
+	}
+
+	node_delete_multiple($nids);
+
+	foreach (array_keys(_b_news_installed_fields()) as $field) {
+		field_delete_field($field);
+	}
+
+	$instances = field_info_instances('node', 'b_news');
+	foreach ($instances as $instance_name => $instance) {
+		field_delete_instance($instance);
+	}
+
+	node_type_delete('b_news');
+
+	field_purge_batch(1000);
+}
+*/
+
+function _b_news_installed_fields() {
+
+	$t = get_t();
+	
+	return array(
+		'field_brafton_term' => array(
+			'field_name'  => 'field_brafton_term',
+			'type'        => 'taxonomy_term_reference',
+			'cardinality' => FIELD_CARDINALITY_UNLIMITED,
+			'settings'    => array(
+				'allowed_values' => array(
+					array(
+						'vocabulary' => 'b_news_t',
+						'parent'     => 0
+					),
+				),
+			),
+		),
+		'field_brafton_image' => array(
+			'field_name'  => 'field_brafton_image',
+			'type'        => 'image',
+			'cardinality' => 1,
+		),
+	);
+
+}
+
+
+function _b_news_installed_instances() {
+
+	$t = get_t();
+
+	return array(
+		'field_brafton_term' => array(
+			'field_name' => 'field_brafton_term',
+			'label'      => $t('Term'),
+			'type'       => 'taxonomy_term_reference',
+			'widget'     => array(
+				'type' => 'options_buttons',
+				),
+		),
+		'field_brafton_image' => array(
+			'field_name'  => 'field_brafton_image',
+			'label'       => $t('Image'),
+			'required'    => FALSE,
+			'widget' => array(
+				'type'    => 'image_image',
+				),
+		),
+	);
+}
+
+
+function brafton_schema() {
+	$schema['brafton'] = array(
+		'description' => 'Stores article-specific information for brafton nodes.',
+		'fields' => array(
+			'nid' => array(
+				'type'        => 'int',
+				'unsigned'    => TRUE,
+				'not null'    => TRUE,
+				'default'     => 0,
+				'description' => "The articles's {node}.nid."
+			),
+			'feed_id' => array(
+				'type'        => 'int',
+				'not null'    => TRUE,
+				'unsigned'    => TRUE,
+				'default'     => 0,
+				'description' => 'The id number of the feed containing this article.'
+			),
+			'dn_id' => array(
+				'type'        => 'int',
+				'not null'    => TRUE,
+				'unsigned'    => TRUE,
+				'default'     => 0,
+				'description' => 'The id number of the article pulled from BraftonXML',
+			),
+			'headline'  => array(
+				'type'        => 'text',
+				'not null'    => FALSE,        
+				'description' => 'The title for the article',
+			),
+			'source'  => array(
+				'type'        => 'text',
+				'not null'    => FALSE,        
+				'description' => 'Sources for the article',
+			),
+			'byline'  => array(
+				'type'        => 'text',
+				'not null'    => FALSE,        
+				'description' => 'Byline for the article',
+			),
+			'keyword' => array(
+				'type'        => 'text',
+				'not null'    => FALSE,
+				'description' => 'The keywords for the article',
+			),
+			'last_modified' => array(
+				'type'        => 'int',
+				'unsigned'    => TRUE,
+				'not null'    => TRUE,
+				'default'     => 0,
+				'description' => "The last modified date"
+			),
+		),
+		'primary key' => array('nid'),
+    );
+	
+	$schema['brafton_pictures'] = array(
+		'description' => 'Stores picture data for articles.',
+		'fields' => array(
+			'nid' => array(
+				'type'        => 'int',
+				'unsigned'    => TRUE,
+				'not null'    => TRUE,
+				'default'     => 0,
+				'description' => "The node id of the associated article."
+			),
+			'caption' => array(
+				'type'        => 'text',
+				'not null'    => TRUE,        
+				'description' => 'Caption for picture.',
+			),
+			'large_url' => array(
+				'type'        => 'text',
+				'not null'    => TRUE,        
+				'description' => 'DirectNews URL for large image',
+			),
+			'lwidth' => array(
+				'type'        => 'int',
+				'not null'    => TRUE,
+				'unsigned'    => TRUE,
+				'default'     => 0,
+				'description' => 'The width of the large image.'
+			),
+			'lheight' => array(
+				'type'        => 'int',
+				'not null'    => TRUE,
+				'unsigned'    => TRUE,
+				'default'     => 0,
+				'description' => 'The height of the large image.'
+			),
+			'small_url' => array(
+				'type'        => 'text',
+				'not null'    => TRUE,        
+				'description' => 'DirectNews URL for thumbnail',
+			),
+			'swidth' => array(
+				'type'        => 'int',
+				'not null'    => TRUE,
+				'unsigned'    => TRUE,
+				'default'     => 0,
+				'description' => 'The width of the small image.'
+			),
+			'sheight' => array(
+				'type'        => 'int',
+				'not null'    => TRUE,
+				'unsigned'    => TRUE,
+				'default'     => 0,
+				'description' => 'The height of the small image.'
+			),
+		 ),
+		'primary key' => array('nid'),
+	);
+		
+	$schema['brafton_term'] = array(
+		'description' => 'Stores article-specific information for brafton nodes.',
+		'fields' => array(
+			'tid'     => array(
+				'type'        => 'int',
+				'unsigned'    => TRUE,
+				'not null'    => TRUE,
+				'default'     => 0,
+				'description' => "The term's id # in the drupal DB",
+		),
+			'dncid' => array(
+				'type'        => 'int',
+				'unsigned'    => TRUE,
+				'not null'    => TRUE,
+				'default'     => 0,
+				'description' => "The term's id # in the directnews DB",
+			),
+		),
+		'primary key' => array('tid'),
+	);
+	
+  return $schema;
+}
+

@@ -1,0 +1,4 @@
+name = Brafton XML Importer
+description = Imports news articles from Brafton feeds on a scheduled basis.
+package = Feed Parser
+core = 7.x
