@@ -179,7 +179,7 @@ function brafton_menu() {
  */
 function brafton_admin() {
 	$form = array();
-  
+
 	$form['brafton_feed'] = array(
 		'#type'          => 'select', 
 		'#title'         => t('Feed Type'), 
@@ -189,7 +189,19 @@ function brafton_admin() {
 			'archive' => t('Archive'), 
 		),
     );
-  
+
+	$form['brafton_apidomain'] = array(
+		'#type'          => 'select', 
+		'#title'         => t('API Domain'), 
+		'#default_value' => variable_get('brafton_feed'),
+		'#options'       => array(
+			'http://api.brafton.com/'     => t('Brafton'),
+			'http://api.contentlead.com/' => t('ContentLEAD'), 
+			'http://api.castleford.com/' => t('Castleford'),
+		),
+    );	
+	
+	
 	$results = db_query("SELECT uid, name FROM users");
 	foreach ($results as $users) {
 		$array[$users->uid] = $users->name;
@@ -210,7 +222,7 @@ function brafton_admin() {
 			'#default_value' => variable_get("brafton_feedurl$i"),
 			'#size'          => 50,
 			'#maxlength'     => 255,
-			'#description'   => t("Format: http://api.brafton.com/[API KEY]/news"),
+			'#description'   => t("xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"),
 			'#required'      => TRUE,
 		);
 	}
@@ -223,6 +235,16 @@ function brafton_admin() {
 		'#maxlength'     => 255,
 		'#description'   => t("Path to Brafton Archive File"),
 	);
+	
+	$form['brafton_postcreatedate'] = array(
+		'#type'          => 'select', 
+		'#title'         => t('Submit Date'), 
+		'#default_value' => variable_get('brafton_postcreatedate'),
+		'#options'       => array(
+			'created'     => t('Published Date'),
+			'altered' => t('Last Modified Date'), 
+		),
+    );
   
 	return system_settings_form($form);
 } 
@@ -237,12 +259,13 @@ function brafton_admin() {
 function _brafton_load_feed($feednum){
   
   $doc = new DOMDocument();
-  
   $feedType = variable_get("brafton_feed");
 	
   if($feedType == "api") {
-	$url = variable_get("brafton_feedurl$feednum");
-
+	$apikey = variable_get("brafton_feedurl$feednum");
+    $apidomain = variable_get("brafton_apidomain");
+	$url = $apidomain.$apikey."/news/";
+	
 	//load XML as string
 	if($url != "null") {
 		$sourcefeed = file_get_contents($url);
@@ -353,7 +376,15 @@ function brafton_cron() {
 			$id = $xpath->evaluate('id', $currentArticle)->item(0)->nodeValue;
 			$publishDate = strtotime($xpath->evaluate('publishDate', $currentArticle)->item(0)->nodeValue);     
 			$lastModified = strtotime($xpath->evaluate('lastModifiedDate', $currentArticle)->item(0)->nodeValue); 
-			
+			$postcreatedate = variable_get("brafton_postcreatedate");
+		    if($postcreatedate=='created')
+			  {
+			  $sortdate = $publishDate;
+			  }
+		      else
+			  {
+			  $sortdate = $lastModified;
+			  }	
 			//get url of article and create new xpath
 			$link = $currentArticle->getAttribute('href');
 			$xpathArray = _brafton_load_newpath($link);
@@ -368,7 +399,7 @@ function brafton_cron() {
 				$result = db_query("SELECT last_modified FROM {brafton} WHERE dn_id = :dnid" , array(':dnid' => $id))->fetchAssoc(); 
 				$changedDate = $result['last_modified'];
 				
-				if ( $lastModified > $changedDate ) {
+				if ( $sortdate != $changedDate ) {
 					$node = node_load($updateId);
 					$updatedArticle = true;	
 				} else {
@@ -406,14 +437,15 @@ function brafton_cron() {
 					node_submit($node);
 				}
 			  
-				$node->created = $publishDate;
-				$node->timestamp = $publishDate;
+				$node->created = $sortdate;
+				$node->timestamp = $sortdate;
 			  
 				$author = variable_get("brafton_author$feednum", 0);
 				$node->uid = $author;
 			  
 				node_save($node);
-			  
+				  
+				
 				//TABLE: {brafton}
 				if($updateId == NULL) $key = array();
 				else $key = array('nid');
@@ -425,7 +457,7 @@ function brafton_cron() {
 					//'keyword' => $keyword = $xpathNews->evaluate('keyword', $ciarticle)->item(0)->nodeValue,
 					//'source' => $source = $xpathNews->evaluate('source', $ciarticle)->item(0)->nodeValue,
 					//'byline' => $byline = $xpathNews->evaluate('byline', $ciarticle)->item(0)->nodeValue,
-					'last_modified' => $lastModified
+					'last_modified' => $sortdate
 				);
 				drupal_write_record('brafton', $braftonData, $key);
 			  
