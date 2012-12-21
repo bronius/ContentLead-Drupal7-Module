@@ -480,6 +480,9 @@ function brafton_cron() {
 					$image = file_get_contents($image_url);
 					$file = file_save_data($image, file_default_scheme().'://brafton_images/'.basename($image_url), FILE_EXISTS_REPLACE);
 					$node->field_brafton_image['und'][0] = (array)$file; 
+          $node->field_brafton_image['und'][0]['alt'] = $xpathPic->evaluate('photo/caption')->item(0)->nodeValue;
+          $node->field_brafton_image['und'][0]['title'] = $xpathPic->evaluate('photo/caption')->item(0)->nodeValue;
+
 					node_save($node);
 					
 					$pictureData = array (
