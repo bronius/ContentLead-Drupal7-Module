@@ -328,11 +328,11 @@ function _brafton_load_newpath($link){
             break;
         case 1:
             //$encodedfeed = iconv("ISO-8859-1", "UTF-8", $sourcefeed2);
-			$encodedfeed = $sourcefeed;
+			$encodedfeed = $sourcefeed2;
             break;
         case 2:
             //$encodedfeed = iconv("ISO-8859-1", "UTF-8", $sourcefeed3);
-			$encodedfeed = $sourcefeed;
+			$encodedfeed = $sourcefeed3;
             break;
     }
         //populate DOM, get XPath from DOM
