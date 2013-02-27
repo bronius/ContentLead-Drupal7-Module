@@ -202,7 +202,7 @@ function brafton_admin() {
     );	
 	
 	
-	$results = db_query("SELECT uid, name FROM users");
+	$results = db_query("SELECT uid, name FROM {users}");
 	foreach ($results as $users) {
 		$array[$users->uid] = $users->name;
 	}  
@@ -588,7 +588,7 @@ function term_exists($catid){
 
 
 function newTag($tagName,$categoryID) {
-$result = db_query("SELECT name,tid FROM taxonomy_term_data"); 
+$result = db_query("SELECT name,tid FROM {taxonomy_term_data}"); 
 if (!$result) { // add this check.
     die('Invalid query: ' . mysql_error());
 }
