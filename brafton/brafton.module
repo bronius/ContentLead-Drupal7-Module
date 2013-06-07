@@ -247,8 +247,8 @@ function brafton_admin_form()	{
 	);
 	$form['brafton_api_key'] = array(
 		'#type' => 'textfield',
-		'#title' => t( 'Api Key' ),
-		'#description' => t( 'Your API key (of the format xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx).' ),
+		'#title' => t( 'API Key' ),
+		'#description' => t( 'Your unique access key, in the format xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx.' ),
 		'#default_value' => variable_get( 'brafton_api_key' ),
 		'#size' => 36,
 		'#maxlength' => 36,
