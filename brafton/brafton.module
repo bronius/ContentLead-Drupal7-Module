@@ -3,10 +3,10 @@
 *	Call to the Adfero APIs.
 */
 
-require_once dirname(__FILE__) . '\SampleAPIClientLibrary\ApiHandler.php';
-require_once dirname(__FILE__) . '\RCClientLibrary\AdferoArticlesVideoExtensions\AdferoVideoClient.php';
-require_once dirname(__FILE__) . '\RCClientLibrary\AdferoArticles\AdferoClient.php';
-require_once dirname(__FILE__) . '\RCClientLibrary\AdferoPhotos\AdferoPhotoClient.php';
+require_once dirname(__FILE__) . '/SampleAPIClientLibrary/ApiHandler.php';
+require_once dirname(__FILE__) . '/RCClientLibrary/AdferoArticlesVideoExtensions/AdferoVideoClient.php';
+require_once dirname(__FILE__) . '/RCClientLibrary/AdferoArticles/AdferoClient.php';
+require_once dirname(__FILE__) . '/RCClientLibrary/AdferoPhotos/AdferoPhotoClient.php';
 
 /**
 *	Implementation of hook_menu() to create the blog pages and the admin settings page.
