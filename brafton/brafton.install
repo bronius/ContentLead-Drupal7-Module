@@ -1,260 +1,275 @@
 <?php
-
 /**
- * Install file for Brafton module.
- */
-
-function brafton_install() {  
-
-	$t = get_t();
-
-	$b_news = array(
-		'type'        => 'b_news',
-		'name'        => $t('News Article'),    
-		'base'        => 'node_content',
-		'description' => $t('The latest industry news.'),
-		'custom'      => TRUE,
-	);
-  
-	$content_type = node_type_set_defaults($b_news);
-  
-	node_add_body_field($content_type);
-
-	node_type_save($content_type);
-
-	$body_instance = field_info_instance('node', 'body', 'b_news');
-
-	if (!field_info_field('field_brafton_term')) {
-		foreach (_b_news_installed_fields() as $field) {
-			field_create_field($field);
-		}
-
-		foreach (_b_news_installed_instances() as $instance) {
-			$instance['entity_type'] = 'node';
-			$instance['bundle'] = $b_news['type'];
-			field_create_instance($instance);
-		}
-	}
-  
-	if(!file_exists(file_default_scheme().'://brafton_images/')) {
-		drupal_mkdir(file_default_scheme().'://brafton_images/');
-	}
-}
-
-
-/**
-function brafton_uninstall() {
-	$sql = 'SELECT nid FROM {node} n WHERE n.type = :type';
-	$result = db_query($sql, array(':type' => 'b_news'));
-	$nids = array();
-	foreach ($result as $row) {
-		$nids[] = $row->nid;
-	}
-
-	node_delete_multiple($nids);
-
-	foreach (array_keys(_b_news_installed_fields()) as $field) {
-		field_delete_field($field);
-	}
-
-	$instances = field_info_instances('node', 'b_news');
-	foreach ($instances as $instance_name => $instance) {
-		field_delete_instance($instance);
-	}
-
-	node_type_delete('b_news');
-
-	field_purge_batch(1000);
-}
+*	Implementation of hook_install() to set up the b_news content type and its requisite fields.
 */
 
-function _b_news_installed_fields() {
+function brafton_install()	{
 
-	$t = get_t();
-	
-	return array(
-		'field_brafton_term' => array(
-			'field_name'  => 'field_brafton_term',
-			'type'        => 'taxonomy_term_reference',
-			'cardinality' => FIELD_CARDINALITY_UNLIMITED,
-			'settings'    => array(
-				'allowed_values' => array(
-					array(
-						'vocabulary' => 'b_news_t',
-						'parent'     => 0
-					),
-				),
-			),
+	//Defines and instantiates the b_news and b_video content types
+
+	$brafton_content_types = array(
+		'b_news' => array(
+			'type' => 'b_news',
+			'name' => t( 'News Article' ),
+			'base' => 'node_content',
+			'description' => t('Use <em>News Articles</em> for your Brafton news feed.'),
+			'custom' => FALSE,
+			'locked' => TRUE,
+			'has_title' => TRUE,
 		),
-		'field_brafton_image' => array(
-			'field_name'  => 'field_brafton_image',
-			'type'        => 'image',
-			'cardinality' => 1,
+		'b_video' => array(
+			'type' => 'b_video',
+			'name' => t( 'Video Article' ),
+			'base' => 'node_content',
+			'description' => t('Use <em>News Articles</em> for your Brafton news feed.'),
+			'custom' => FALSE,
+			'locked' => TRUE,
+			'has_title' => TRUE,
 		),
 	);
+	foreach( $brafton_content_types as $value ) {
+		$content_type = node_type_set_defaults( $value );
+		node_type_save( $content_type );
+		node_add_body_field( $content_type );
+	}
 
-}
+	//Checks to see whether the Brafton taxonomy vocabulary has already been registered.
 
+	$check_article_taxonomy = taxonomy_vocabulary_machine_name_load( 'b_news_t' );
+	$check_video_taxonomy = taxonomy_vocabulary_machine_name_load( 'b_news_v' );
+	if( empty( $check_article_taxonomy ) )	{
+	
+		//Defines and instantiate the taxonomy vocabulary for the b_news content type.
 
-function _b_news_installed_instances() {
+		$vocabulary = ( object ) array(
+			'name' => t( 'News Categories' ),
+			'machine_name' => 'b_news_t',
+			'description' => t( 'Tags that group Brafton news articles into categories' ),
+			'hierarchy' => 0,
+		);
+		taxonomy_vocabulary_save( $vocabulary );
+	}
+	if( empty( $check_video_taxonomy ) )	{
+	
+		//Defines and instantiate the taxonomy vocabulary for the b_video content type.
 
-	$t = get_t();
+		$vocabulary = ( object ) array(
+			'name' => t( 'Video Categories' ),
+			'machine_name' => 'b_news_v',
+			'description' => t( 'Tags that group Brafton videos into categories' ),
+			'hierarchy' => 0,
+		);
+		taxonomy_vocabulary_save( $vocabulary );
+	}
 
-	return array(
+	//Defines and instantiates the neccessary fields for the b_news and b_video content types.
+
+	$fields = array(
 		'field_brafton_term' => array(
 			'field_name' => 'field_brafton_term',
-			'label'      => $t('Term'),
-			'type'       => 'taxonomy_term_reference',
-			'widget'     => array(
-				'type' => 'options_buttons',
-				),
+			'type' => 'taxonomy_term_reference',
+			'cardinality' => FIELD_CARDINALITY_UNLIMITED,
+			'settings' => array(
+    			'allowed_values' => array(
+					array(
+        				'vocabulary' => 'b_news_t',
+        				'parent' => 0,
+      				),
+    			),
+ 			),
 		),
 		'field_brafton_image' => array(
-			'field_name'  => 'field_brafton_image',
-			'label'       => $t('Image'),
-			'required'    => FALSE,
-			'widget' => array(
-				'type'    => 'image_image',
+			'field_name' => 'field_brafton_image',
+			'type' => 'image',
+		),
+		'field_brafton_id' => array(
+			'field_name' => 'field_brafton_id',
+			'type' => 'number_integer',
+		),
+		'field_brafton_video' => array(
+			'field_name' => 'field_brafton_video',
+			'type' => 'text_long',
+		),
+		'field_brafton_video_term' => array(
+			'field_name' => 'field_brafton_video_term',
+			'type' => 'taxonomy_term_reference',
+			'cardinality' => FIELD_CARDINALITY_UNLIMITED,
+			'settings' => array(
+    			'allowed_values' => array(
+					array(
+        				'vocabulary' => 'b_news_v',
+        				'parent' => 0,
+      				),
+    			),
+ 			),
+		),
+	);
+
+	//Binds the fields defined above into the b_news and b_video bundles.
+
+	$instances = array(
+		'field_brafton_term' => array(
+			'field_name' => 'field_brafton_term',
+			'entity_type' => 'node',
+			'label' => 'News Category',
+			'bundle' => 'b_news',
+			'display' => array(
+				'default' => array(
+					'type' => 'taxonomy_term_reference_link',
+					'weight' => 10,
 				),
-		),
-	);
-}
-
-
-function brafton_schema() {
-	$schema['brafton'] = array(
-		'description' => 'Stores article-specific information for brafton nodes.',
-		'fields' => array(
-			'nid' => array(
-				'type'        => 'int',
-				'unsigned'    => TRUE,
-				'not null'    => TRUE,
-				'default'     => 0,
-				'description' => "The articles's {node}.nid."
-			),
-			'feed_id' => array(
-				'type'        => 'int',
-				'not null'    => TRUE,
-				'unsigned'    => TRUE,
-				'default'     => 0,
-				'description' => 'The id number of the feed containing this article.'
-			),
-			'dn_id' => array(
-				'type'        => 'int',
-				'not null'    => TRUE,
-				'unsigned'    => TRUE,
-				'default'     => 0,
-				'description' => 'The id number of the article pulled from BraftonXML',
-			),
-			'headline'  => array(
-				'type'        => 'text',
-				'not null'    => FALSE,        
-				'description' => 'The title for the article',
-			),
-			'source'  => array(
-				'type'        => 'text',
-				'not null'    => FALSE,        
-				'description' => 'Sources for the article',
-			),
-			'byline'  => array(
-				'type'        => 'text',
-				'not null'    => FALSE,        
-				'description' => 'Byline for the article',
-			),
-			'keyword' => array(
-				'type'        => 'text',
-				'not null'    => FALSE,
-				'description' => 'The keywords for the article',
-			),
-			'last_modified' => array(
-				'type'        => 'int',
-				'unsigned'    => TRUE,
-				'not null'    => TRUE,
-				'default'     => 0,
-				'description' => "The last modified date"
+				'teaser' => array(
+					'type' => 'taxonomy_term_reference_link',
+					'weight' => 10,
+				),
 			),
 		),
-		'primary key' => array('nid'),
-    );
-	
-	$schema['brafton_pictures'] = array(
-		'description' => 'Stores picture data for articles.',
-		'fields' => array(
-			'nid' => array(
-				'type'        => 'int',
-				'unsigned'    => TRUE,
-				'not null'    => TRUE,
-				'default'     => 0,
-				'description' => "The node id of the associated article."
+		'field_brafton_image' => array(
+			'field_name' => 'field_brafton_image',
+			'entity_type' => 'node',
+			'label' => 'Featured Image',
+			'bundle' => 'b_news',
+			'description' => t( 'Upload an image to go with this article.' ),
+			'settings' => array(
+				'default_image' => NULL,
 			),
-			'caption' => array(
-				'type'        => 'text',
-				'not null'    => TRUE,        
-				'description' => 'Caption for picture.',
-			),
-			'large_url' => array(
-				'type'        => 'text',
-				'not null'    => TRUE,        
-				'description' => 'DirectNews URL for large image',
-			),
-			'lwidth' => array(
-				'type'        => 'int',
-				'not null'    => TRUE,
-				'unsigned'    => TRUE,
-				'default'     => 0,
-				'description' => 'The width of the large image.'
-			),
-			'lheight' => array(
-				'type'        => 'int',
-				'not null'    => TRUE,
-				'unsigned'    => TRUE,
-				'default'     => 0,
-				'description' => 'The height of the large image.'
-			),
-			'small_url' => array(
-				'type'        => 'text',
-				'not null'    => TRUE,        
-				'description' => 'DirectNews URL for thumbnail',
-			),
-			'swidth' => array(
-				'type'        => 'int',
-				'not null'    => TRUE,
-				'unsigned'    => TRUE,
-				'default'     => 0,
-				'description' => 'The width of the small image.'
-			),
-			'sheight' => array(
-				'type'        => 'int',
-				'not null'    => TRUE,
-				'unsigned'    => TRUE,
-				'default'     => 0,
-				'description' => 'The height of the small image.'
-			),
-		 ),
-		'primary key' => array('nid'),
-	);
-		
-	$schema['brafton_term'] = array(
-		'description' => 'Stores article-specific information for brafton nodes.',
-		'fields' => array(
-			'tid'     => array(
-				'type'        => 'int',
-				'unsigned'    => TRUE,
-				'not null'    => TRUE,
-				'default'     => 0,
-				'description' => "The term's id # in the drupal DB",
-		),
-			'dncid' => array(
-				'type'        => 'int',
-				'unsigned'    => TRUE,
-				'not null'    => TRUE,
-				'default'     => 0,
-				'description' => "The term's id # in the directnews DB",
+			'display' => array(
+				'default' => array(
+					'label' => 'hidden',
+					'type' => 'image',
+					'settings' => array(
+						'image_style' => 'medium',
+						'image_link' => '',
+					),
+					'weight' => -1,
+				),
+				'teaser' => array(
+					'label' => 'hidden',
+					'type' => 'image',
+					'settings' => array(
+						'image_style' => 'thumbnail',
+						'image_link' => 'content',
+					),
+					'weight' => -1,
+				),
 			),
 		),
-		'primary key' => array('tid'),
+		'field_brafton_id' => array(
+			'field_name' => 'field_brafton_id',
+			'entity_type' => 'node',
+			'bundle' => 'b_news',
+			'display' => array(
+				'default' => array(
+					'label' => 'hidden',
+					'type' => 'hidden',
+				),
+			),
+		),
+		'field_brafton_image' => array(
+			'field_name' => 'field_brafton_image',
+			'entity_type' => 'node',
+			'label' => 'Featured Image',
+			'bundle' => 'b_video',
+			'description' => t( 'Upload an image to go with this article.' ),
+			'settings' => array(
+				'default_image' => NULL,
+			),
+			'display' => array(
+				'default' => array(
+					'label' => 'hidden',
+					'type' => 'hidden',
+				),
+				'teaser' => array(
+					'label' => 'hidden',
+					'type' => 'image',
+					'settings' => array(
+						'image_style' => 'thumbnail',
+						'image_link' => 'content',
+					),
+					'weight' => -1,
+				),
+			),
+		),
+		'field_brafton_id' => array(
+			'field_name' => 'field_brafton_id',
+			'entity_type' => 'node',
+			'bundle' => 'b_video',
+			'display' => array(
+				'default' => array(
+					'label' => 'hidden',
+					'type' => 'hidden',
+				),
+			),
+		),
+		'field_brafton_video' => array(
+			'field_name' => 'field_brafton_video',
+			'entity_type' => 'node',
+			'bundle' => 'b_video',
+			'label' => 'Featured Video',
+			'description' => t( 'Video Embed code to go with this article.' ),
+			'settings' => array(
+					'text_processing' => 1,
+				),
+			'display' => array(
+				'default' => array(
+					'label' => 'hidden',
+					'type' => 'text_default',
+					'weight' => -2,
+				),
+				'teaser' => array(
+					'label' => 'hidden',
+					'type' => 'hidden',
+					'weight' => -1,
+				),
+			),
+		),
+		'field_brafton_video_term' => array(
+			'field_name' => 'field_brafton_video_term',
+			'entity_type' => 'node',
+			'label' => 'Video Category',
+			'bundle' => 'b_video',
+			'display' => array(
+				'default' => array(
+					'type' => 'taxonomy_term_reference_link',
+					'weight' => 10,
+				),
+				'teaser' => array(
+					'type' => 'taxonomy_term_reference_link',
+					'weight' => 10,
+				),
+			),
+		),
 	);
 	
-  return $schema;
-}
+	//Checks each field and instance to see if it exists.  If it does not, it is created.
+	
+	foreach ($fields as $field)	{
+		$check_field = field_info_field( $field['field_name'] );
+		if( empty( $check_field ) )	{
+			field_create_field( $field );
+		}
+		else	{
+			field_update_field( $field );
+		}
+	}
+	foreach( $instances as $instance )	{
+		$check_instance = field_info_instance( $instance['entity_type'],$instance['field_name'],$instance['bundle'] );
+		if( empty( $check_instance ) )	{
+			field_create_instance( $instance );
+		}
+		else	{
+			field_update_instance( $instance );
+		}
+	}
 
+	if( db_table_exists( 'brafton' ) )	{
+		$results = db_query( "SELECT nid, dn_id FROM {brafton}" );
+		$id_array = $results->fetchAllKeyed();
+		foreach( $id_array as $key => $value )	{
+			$node = node_load( $key );
+			$node->field_brafton_id[ $node->language ][0]['value'];
+			node_save( $node );
+		}
+	}
+}
+?>
