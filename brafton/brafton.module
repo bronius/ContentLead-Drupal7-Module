@@ -235,8 +235,8 @@ function brafton_admin_form()	{
 	);
 	$form['brafton_api_root'] = array(
 		'#type' => 'select',
-		'#title' => t( 'API Root' ),
-		'#description' => t( 'The root domain of your Api key (i.e, api.brafton.com).' ),
+		'#title' => t( 'API Domain' ),
+		'#description' => t( 'The serving URL of your custom content.' ),
 		'#options' => array(
 			'http://api.brafton.com' => 'Brafton',
 			'http://api.contentlead.com' => 'ContentLEAD',
