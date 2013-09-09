@@ -789,8 +789,9 @@ function brafton_cron()	{
 	if( $feed_type == 'videos' || $feed_type == 'both' )	{
 		if( $is_video_public && $is_video_secret )	{
 			$baseURL = 'http://api.video.brafton.com/v2/';
-			$photoURI = "http://pictures.directnews.co.uk/v2/";
+			$photoURI = "http://pictures.video.brafton.com/v2/";
 			$videoClient = new AdferoVideoClient( $baseURL,$is_video_public,$is_video_secret );
+			$videoOutClient = $videoClient->videoOutputs();
 			$client = new AdferoClient( $baseURL,$is_video_public,$is_video_secret );
 			$photoClient = new AdferoPhotoClient( $photoURI );
 			$photos = $client->ArticlePhotos();
@@ -819,14 +820,42 @@ function brafton_cron()	{
 					$category = $categories->Get( $categoryId );
 					$categories = set_article_categories( $value,'b_video',$category );
 				}
-				$embedCode = $videoClient->VideoPlayers()->GetWithFallback( $id,'redbean',1,'rcflashplayer',1 );
-				if ( strpos( $embedCode->embedCode,'adobe' ) < 30 )	{
-					continue;
+
+				$presplash = $thisArticle->fields['preSplash'];
+				$postsplash = $thisArticle->fields['postSplash'];
+				
+				$videoList=$videoOutClient->ListForArticle($brafton_id,0,10);
+				$list=$videoList->items;
+				$ogg=false;
+				$mp4=false;
+				$flv=false;
+				foreach($list as $listItem){
+					$output=$videoOutClient->Get($listItem->id);
+					//logMsg($output->path);
+					if($output->type=="htmlmp4" && !$mp4) {$mp4=$output->path; $width=$output->width; $height=$output->height;}
+					if($output->type=="htmlogg" && !$ogg) {$ogg=$output->path; $width=$output->width; $height=$output->height;}
+					if($output->type=="flash" && !$flv) {$flv=$output->path; $width=$output->width; $height=$output->height;}
 				}
+				
+				$embedCode=<<<EOT
+		<video id='video-$brafton_id' class='video-js vjs-default-skin'
+			controls preload='auto' width="$width" height='$height'
+			poster='$presplash'
+			data-setup='{"example_option":true}'>
+			<source src="$mp4" type='video/mp4' />
+			<source src="$ogg" type='video/ogg' />
+			<source src="$flv" type='video/flash' />
+		</video>
+EOT;
+				
+				//$embedCode = $videoClient->VideoPlayers()->GetWithFallback( $id,'redbean',1,'rcflashplayer',1 );
+				//if ( strpos( $embedCode->embedCode,'adobe' ) < 30 )	{
+				//	continue;
+				//}
 
 				//Wraps a Div around the embed code
 
-				$embed_code = "<div id='post-single-video'>" . $embedCode->embedCode . "</div>";
+				$embed_code = "<div id='post-single-video'>" . $embedCode . "</div>";
 
 				//Gets the image data from the feed
 
