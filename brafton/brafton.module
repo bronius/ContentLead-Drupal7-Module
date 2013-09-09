@@ -824,7 +824,7 @@ function brafton_cron()	{
 				$presplash = $thisArticle->fields['preSplash'];
 				$postsplash = $thisArticle->fields['postSplash'];
 				
-				$videoList=$videoOutClient->ListForArticle($brafton_id,0,10);
+				$videoList=$videoOutClient->ListForArticle($id,0,10);
 				$list=$videoList->items;
 				$ogg=false;
 				$mp4=false;
@@ -838,7 +838,7 @@ function brafton_cron()	{
 				}
 				
 				$embedCode=<<<EOT
-		<video id='video-$brafton_id' class='video-js vjs-default-skin'
+		<video id='video-$id' class='video-js vjs-default-skin'
 			controls preload='auto' width="$width" height='$height'
 			poster='$presplash'
 			data-setup='{"example_option":true}'>
