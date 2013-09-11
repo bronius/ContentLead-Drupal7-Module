@@ -5,6 +5,7 @@
 
 function brafton_install()	{
 
+
 	//Defines and instantiates the b_news and b_video content types
 
 	$brafton_content_types = array(
