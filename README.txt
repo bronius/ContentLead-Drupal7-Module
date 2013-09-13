@@ -1,5 +1,5 @@
 //
-// Brafton Drupal 7 Module v1.0
+// Brafton Drupal 7 Module v1.x-mccoys
 // http://www.brafton.com/support
 //
 
