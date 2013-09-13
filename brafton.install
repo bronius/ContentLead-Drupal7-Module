@@ -1,6 +1,18 @@
 <?php
 
 /**
+ * Implements hook_update_n().
+ * Update cardinality of Brafton image field to Unlimited.
+ */
+function brafton_update_7000() {
+  $field = array(
+    'field_name' => 'field_brafton_image',
+    'cardinality' => FIELD_CARDINALITY_UNLIMITED,
+  );
+  field_update_field($field);
+}
+
+/**
  * Install file for Brafton module.
  */
 function brafton_install() {
@@ -86,7 +98,7 @@ function _b_news_installed_fields() {
     'field_brafton_image' => array(
       'field_name' => 'field_brafton_image',
       'type' => 'image',
-      'cardinality' => 1,
+      'cardinality' => FIELD_CARDINALITY_UNLIMITED,
     ),
   );
 }

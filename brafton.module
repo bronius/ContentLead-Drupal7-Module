@@ -463,19 +463,18 @@ function brafton_cron() {
         else
           $pickey = array('nid');
 
+        $node->field_brafton_image['und'] = array(); // Clear out existing image off the node if any
         $xpathPic = $xpathArray[1];
         $pictree = $xpathPic->evaluate('//photo'); //NodeList Object
-        $picNode = $pictree->item(0);
-        if ($xpathPic->evaluate('//photo')->item(0) != NULL) {
-
-          $image_url = $xpathPic->evaluate("photo/instances/instance/url")->item(0)->nodeValue;
+        $delta = -1;
+        foreach ($pictree as $index => $picNode) {
+          $delta += 1;
+          $image_url = $xpathPic->evaluate("photo/instances/instance/url")->item($index)->nodeValue;
           $image = file_get_contents($image_url);
           $file = file_save_data($image, file_default_scheme() . '://brafton_images/' . basename($image_url), FILE_EXISTS_REPLACE);
-          $node->field_brafton_image['und'][0] = (array) $file;
-          $node->field_brafton_image['und'][0]['alt'] = $xpathPic->evaluate('photo/caption')->item(0)->nodeValue;
-          $node->field_brafton_image['und'][0]['title'] = $xpathPic->evaluate('photo/caption')->item(0)->nodeValue;
-
-          node_save($node);
+          $node->field_brafton_image['und'][$delta] = (array) $file;
+          $node->field_brafton_image['und'][$delta]['alt'] = $xpathPic->evaluate('photo/caption')->item($index)->nodeValue;
+          $node->field_brafton_image['und'][$delta]['title'] = $xpathPic->evaluate('photo/caption')->item($index)->nodeValue;
 
           $pictureData = array(
             'nid' => $node->nid,
@@ -489,6 +488,7 @@ function brafton_cron() {
           );
           drupal_write_record('brafton_pictures', $pictureData, $pickey);
         }
+        node_save($node);
 
         //TABLE: {brafton_term} & {term_node}   
         //get 'categories' data
@@ -543,6 +543,8 @@ function brafton_cron() {
         }
       }
     }
+    $cnt = $articles->length;
+    watchdog('brafton', '%cnt articles loaded from feed during cron', array('%cnt' => $cnt));
   }
   print "Articles loaded.";
 }
