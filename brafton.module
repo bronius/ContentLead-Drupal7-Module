@@ -662,4 +662,49 @@ function _brafton_term_exists($dncid) {
   }
 }
 
-?>
+
+/**
+ * Throw-away helper function to consolidate images down to 1 new multivalue field (7000).
+ */
+function _brafton_install_consolidate_images() {
+  
+  $oldfields = array(
+    'field_brafton_image_2',
+    'field_brafton_image_3',
+    'field_brafton_image_4',
+  );
+  
+  // Load all News Article content
+  $query = new EntityFieldQuery();
+  $query
+    ->entityCondition('entity_type', 'node')
+    ->entityCondition('bundle', 'b_news')
+  ;
+  $result = $query->execute();
+  $nids = array_keys($result['node']);
+  $nodes = entity_load('node', $nids);
+  
+  // Iterate all News Article content
+  foreach ($nodes as $node) {
+    // Look for the additional image fields
+    foreach ($oldfields as $fieldname) {
+      if (!empty($node->$fieldname)) {
+        // Load into single multivalue
+        $oldfield = $node->$fieldname;
+        $node->field_brafton_image[$node->language][] = $oldfield[$node->language][0];
+      }
+      // Unset original fields' values
+      unset($node->$fieldname[$node->language]); // Hmm.. Doesn't seem to work? Doesn't matter: Field will get dropped!
+    }
+    // Save the modified node
+    node_save($node);
+    
+  }
+
+  // Clean up by removing old image fields
+  foreach ($oldfields as $fieldname) {
+    // Mark field for deletion (on next cron run)
+    field_delete_field($field_name);
+  }
+
+}

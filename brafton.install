@@ -13,6 +13,14 @@ function brafton_update_7000() {
 }
 
 /**
+ * Implements hook_update_n().
+ * Copy existing Brafton image fields down into the multivalue field.
+ */
+function brafton_update_7001() {
+  _brafton_install_consolidate_images();
+}
+
+/**
  * Install file for Brafton module.
  */
 function brafton_install() {
@@ -50,6 +58,9 @@ function brafton_install() {
   if (!file_exists(file_default_scheme() . '://brafton_images/')) {
     drupal_mkdir(file_default_scheme() . '://brafton_images/');
   }
+  
+  _brafton_install_consolidate_images();
+  
 }
 
 /**
