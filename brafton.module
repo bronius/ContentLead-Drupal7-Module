@@ -174,7 +174,7 @@ function brafton_menu() {
  */
 function brafton_admin() {
   $form = array();
-
+  
   $form['brafton_feed'] = array(
     '#type' => 'select',
     '#title' => t('Feed Type'),
@@ -692,18 +692,11 @@ function _brafton_install_consolidate_images() {
         // Load into single multivalue
         $oldfield = $node->$fieldname;
         $file = $oldfield[$node->language][0];
-        $node->field_brafton_image[$node->language][] = $file;
-        
-        // Add file usage instance to prevent file from getting deleted in the following field deletion
-        file_usage_add($file, 'file', 'node', $node->nid);
-
+        $node->field_brafton_image[$node->language][] = (array)file_copy((object)$file, $file['uri'], FILE_EXISTS_RENAME);
       }
-      // Unset original fields' values
-      unset($node->$fieldname[$node->language]); // Hmm.. Doesn't seem to work? Doesn't matter: Field will get dropped!
     }
     // Save the modified node
     node_save($node);
-    
   }
 
   // Clean up by removing old image fields
